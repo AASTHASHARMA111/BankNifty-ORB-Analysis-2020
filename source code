@@ -1,0 +1,51 @@
+import pandas as pd
+
+# Load the data
+file_path = r'C:\Users\aasth\OneDrive\Desktop\stock market project\2020\2020\Yearly Consolidated\CSV 2020\BANKNIFTY.csv'
+data = pd.read_csv(file_path)
+
+# Print column names
+print("Column Names:", data.columns)
+
+# Print the first few rows of the loaded data
+print("First Few Rows:")
+print(data.head())
+
+# Initialize variables
+capital = 1000000  # Assuming starting capital is 1,000,000 INR
+stop_loss_percent = 0.005  # 0.5%
+
+# Initialize trade variables
+position = None
+entry_price = 0
+stop_loss_price = 0
+
+# Initialize P&L
+pnl = 0
+
+# Loop through each day
+for index, row in data.iterrows():
+    
+    # Check if it's the first 15 minutes
+    timestamp = row['2020/01/01'] + ' ' + row['09:16']  # Modify the date format here
+    if timestamp >= '2020/01/01 09:15:00' and timestamp <= '2020/01/01 09:30:00':
+        open_range = float(row['32295.8']) - float(row['32220.9'])  # Adjust column names and convert to float
+        entry_price = float(row['32295.8']) + 0.5 * open_range
+        stop_loss_price = entry_price - (entry_price * stop_loss_percent)
+        
+        # Check for stop loss hit
+        if position == 'buy' and float(row['32220.9']) <= stop_loss_price:
+            pnl -= (entry_price - stop_loss_price)
+            position = None
+
+        # Check for square off at 3:15 pm
+        if position and timestamp >= '2020/01/01 15:15:00':
+            pnl += float(row['Close']) if position == 'buy' else -float(row['Close'])
+            position = None
+
+# Add the final P&L to the capital
+capital += pnl
+
+# Print the final capital and P&L
+print("Final Capital:", capital)
+print("Total Profit/Loss:", pnl)
